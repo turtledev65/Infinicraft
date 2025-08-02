@@ -24,6 +24,7 @@ export function initDB() {
         request.onupgradeneeded = () => {
             const db = request.result;
             const itemsStore = db.createObjectStore("items", { autoIncrement: true });
+            itemsStore.createIndex("recipe", "recipe", { unique: true });
 
             config.startingItems.forEach(item => {
                 itemsStore.add(item, item.id);
@@ -51,8 +52,42 @@ export function getAllItems() {
     })
 }
 
+export function getItem(recipe: [number, number]) {
+    return new Promise<Item>((rez, rej) => {
+        if (db === null) {
+            rej("DB not initialized");
+            return;
+        }
+
+        const store = getObjectStore("items", "readonly");
+        if (store === null) {
+            return;
+        }
+
+        const request = store.index("recipe").openCursor();
+        request.onsuccess = (e) => {
+            const cursor = request.result;
+            console.log(cursor);
+            if (cursor) {
+                const currItem = cursor.value;
+                console.log(currItem);
+                if (currItem.recipe[0] === recipe[0] && currItem.recipe[1] === recipe[1]) {
+                    rez(currItem);
+                }
+                cursor.continue();
+            } else {
+                rej("Item not found");
+                return;
+            }
+        }
+        request.onerror = (e) => {
+            rej(e.target?.error);
+        }
+    })
+}
+
 export function addItem(item: Item) {
-    return new Promise<void>((rez, rej) => {
+    return new Promise<number>((rez, rej) => {
         if (db === null) {
             rej("DB not initialized");
         }
