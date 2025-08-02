@@ -5,6 +5,15 @@ export type Item = {
     recipe?: [number, number];
 };
 
+
+export type PlacedItem = {
+    x: number;
+    y: number;
+    item: Item;
+    id: number;
+}
+
+
 export type Config = {
     startingItems: Item[];
 };

@@ -1,5 +1,5 @@
 import config from "../config";
-import type { Item } from "../types";
+import type { Item, PlacedItem } from "../types";
 
 let db: IDBDatabase | null = null;
 
@@ -25,10 +25,11 @@ export function initDB() {
             const db = request.result;
             const itemsStore = db.createObjectStore("items", { autoIncrement: true });
             itemsStore.createIndex("recipe", "recipe", { unique: true });
-
             config.startingItems.forEach(item => {
                 itemsStore.add(item, item.id);
             });
+
+            db.createObjectStore("placedItems", { autoIncrement: true });
         }
     })
 
@@ -67,10 +68,8 @@ export function getItem(recipe: [number, number]) {
         const request = store.index("recipe").openCursor();
         request.onsuccess = (e) => {
             const cursor = request.result;
-            console.log(cursor);
             if (cursor) {
                 const currItem = cursor.value;
-                console.log(currItem);
                 if (currItem.recipe[0] === recipe[0] && currItem.recipe[1] === recipe[1]) {
                     rez(currItem);
                 }
@@ -82,6 +81,28 @@ export function getItem(recipe: [number, number]) {
         }
         request.onerror = (e) => {
             rej(e.target?.error);
+        }
+    })
+}
+
+export function getAllPlacedItems() {
+    return new Promise<PlacedItem[]>((rez, rej) => {
+        if (db === null) {
+            rej("DB not initialized");
+            return;
+        }
+
+        const store = getObjectStore("placedItems", "readonly");
+        if (store === null) {
+            return;
+        }
+
+        const req = store.getAll();
+        req.onerror = (e) => {
+            rej(e.target?.error);
+        }
+        req.onsuccess = () => {
+            rez(req.result);
         }
     })
 }
@@ -108,7 +129,7 @@ export function addItem(item: Item) {
     })
 }
 
-function getObjectStore(name: string, mode: "readonly" | "readwrite") {
+function getObjectStore(name: "items" | "placedItems", mode: "readonly" | "readwrite") {
     if (db === null) {
         console.error("DB not initialized");
         return null;

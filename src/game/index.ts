@@ -26,6 +26,7 @@ async function getExistingCombination(item1: Item, item2: Item) {
     let out: Item | null = null;
     try {
         out = await getItem([id1, id2]);
+        console.log(`Found ${out.emoji} ${out.name}`);
     } catch (err) {
         console.log(err);
     }
@@ -258,10 +259,10 @@ const sidebarContainer =
 export async function startGame() {
     await initDB()
     const items = await getAllItems();
-
     for (const item of items) {
         const button = new SidebarItemButton(item, sidebar, sidebarContainer);
         button.addToSidebar();
     }
+
     requestAnimationFrame(checkPlacedButtons);
 }
