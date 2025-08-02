@@ -7,22 +7,30 @@ import {
     querrySelectorOrThrow,
 } from "../utils/html";
 import { DEFAULT_MODEL, query } from "../utils/hugging-face";
-import { getAllItems, initDB } from "../utils/indexeddb";
+import { addItem, getAllItems, getItem, initDB } from "../utils/indexeddb";
 import { Vector2 } from "../utils/math";
 
-function getExistingCombination(item1: Item, item2: Item) {
+async function getExistingCombination(item1: Item, item2: Item) {
     console.log(
         `Searching for existing combination of ${item1.emoji} ${item1.name} ${item2.emoji} ${item2.name}...`,
     );
 
-    let out: Item | null = null;
-    let found = false;
-
-    if (!found) {
-        console.log("Existing combination not found!");
+    let id1 = item1.id;
+    let id2 = item2.id;
+    if (id1 > id2) {
+        const tmp = id1;
+        id1 = id2;
+        id2 = tmp;
     }
 
-    return out as Item | null;
+    let out: Item | null = null;
+    try {
+        out = await getItem([id1, id2]);
+    } catch (err) {
+        console.log(err);
+    }
+
+    return out;
 }
 
 async function getNewCombination(item1: Item, item2: Item) {
@@ -42,11 +50,26 @@ async function getNewCombination(item1: Item, item2: Item) {
     const [emoji, name] = response.choices[0].message.content.split(" ");
     console.log(`Found ${emoji} ${name}`);
 
-    return { emoji, name } as Item;
+    // The saved ids should always be saved in ascending order
+    let id1 = item1.id;
+    let id2 = item2.id;
+    if (id1 > id2) {
+        const tmp = id1;
+        id1 = id2;
+        id2 = tmp;
+    }
+    const recipe = [id1, id2];
+    console.log(recipe);
+
+    // Save to db
+    const newItem = { emoji, name, recipe } as Item;
+    const id = await addItem(newItem);
+
+    return { ...newItem, id };
 }
 
 async function getCombination(item1: Item, item2: Item) {
-    let out = getExistingCombination(item1, item2);
+    let out = await getExistingCombination(item1, item2);
     if (!out) {
         out = await getNewCombination(item1, item2);
     }
