@@ -26,13 +26,12 @@ export function initDB() {
             const itemsStore = db.createObjectStore("items", { autoIncrement: true });
 
             config.startingItems.forEach(item => {
-                itemsStore.add(item);
+                itemsStore.add(item, item.id);
             });
         }
     })
 
 }
-
 
 export function getAllItems() {
     return new Promise<Item[]>((rez, rej) => {
