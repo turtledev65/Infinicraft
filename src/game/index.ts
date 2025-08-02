@@ -1,3 +1,4 @@
+import type { Item } from "../types";
 import {
     checkCollision,
     getElementDimensions,
@@ -6,41 +7,16 @@ import {
     querrySelectorOrThrow,
 } from "../utils/html";
 import { DEFAULT_MODEL, query } from "../utils/hugging-face";
-import { Graph, Vector2 } from "../utils/math";
-
-export type Item = {
-    emoji: string;
-    name: string;
-};
-
-function compareItems(a: Item, b: Item) {
-    return a.emoji === b.emoji && a.name === b.name;
-}
+import { addItem, getAllItems, initDB } from "../utils/indexeddb";
+import { Vector2 } from "../utils/math";
 
 function getExistingCombination(item1: Item, item2: Item) {
     console.log(
         `Searching for existing combination of ${item1.emoji} ${item1.name} ${item2.emoji} ${item2.name}...`,
     );
 
-    const node1 = graphItems.getNode(item1);
-    const node2 = graphItems.getNode(item2);
-    if (!node1 || !node2) return null;
-
     let out: Item | null = null;
     let found = false;
-    graphItems.dfs((item: Item) => {
-        console.log("Dfs 1: ", item);
-        graphItems.dfs((otherItem: Item) => {
-            if (compareItems(item, otherItem)) {
-                out = item;
-                found = true;
-                return null;
-            }
-        }, node2);
-        if (found) {
-            return null;
-        }
-    }, node1);
 
     if (!found) {
         console.log("Existing combination not found!");
@@ -87,9 +63,6 @@ async function checkPlacedButtons() {
                     if (!newItem) {
                         continue;
                     }
-
-                    graphItems.addEdge(button.item, newItem);
-                    graphItems.addEdge(other.item, newItem);
 
                     const newSidebarButton = new SidebarItemButton(
                         newItem,
@@ -258,10 +231,7 @@ const STARTING_ITEMS: Item[] = [
     { emoji: "💀", name: "skull" },
     { emoji: "💧", name: "water" },
 ] as const;
-const graphItems = new Graph<Item>(compareItems);
-for (const item of STARTING_ITEMS) {
-    graphItems.addNode(item);
-}
+const items = [...STARTING_ITEMS];
 
 const placedButtons = [] as DraggableItemButton[];
 
@@ -269,10 +239,12 @@ const sidebar = querrySelectorOrThrow<HTMLElement>("#sidebar");
 const sidebarContainer =
     querrySelectorOrThrow<HTMLElement>("#sidebar-container");
 
-export function startGame() {
-    graphItems.dfs(item => {
+export async function startGame() {
+    await initDB()
+
+    for (const item of items) {
         const button = new SidebarItemButton(item, sidebar, sidebarContainer);
         button.addToSidebar();
-    });
+    }
     requestAnimationFrame(checkPlacedButtons);
 }
