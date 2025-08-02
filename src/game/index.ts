@@ -1,14 +1,11 @@
 import type { Item } from "../types";
 import {
     checkCollision,
-    getElementDimensions,
     getElementPosition,
-    getPointerPosition,
-    querrySelectorOrThrow,
 } from "../utils/html";
 import { DEFAULT_MODEL, query } from "../utils/hugging-face";
 import { addItem, getAllItems, getItem, initDB } from "../utils/indexeddb";
-import { Vector2 } from "../utils/math";
+import { DraggableItemButton, placedButtons, SidebarItemButton } from "./sidebar";
 
 async function getExistingCombination(item1: Item, item2: Item) {
     console.log(
@@ -87,19 +84,11 @@ async function checkPlacedButtons() {
 
 
                     if (!alreadyExists) {
-                        const newSidebarButton = new SidebarItemButton(
-                            newItem,
-                            sidebar,
-                            sidebarContainer,
-                        );
+                        const newSidebarButton = new SidebarItemButton(newItem);
                         newSidebarButton.addToSidebar();
                     }
 
-                    const newDraggableButton = new DraggableItemButton(
-                        newItem,
-                        sidebar,
-                        false,
-                    );
+                    const newDraggableButton = new DraggableItemButton(newItem, false);
                     const pos = getElementPosition(button.elem);
                     newDraggableButton.setPos(pos);
                     newDraggableButton.addToBody();
@@ -120,147 +109,13 @@ async function checkPlacedButtons() {
     requestAnimationFrame(checkPlacedButtons);
 }
 
-/**
- * Base item button class that is inherited by all the other item buttons
- */
-class BaseItemButton {
-    elem: HTMLButtonElement;
-    item: Item;
-
-    constructor(item: Item) {
-        this.elem = document.createElement("button");
-        this.elem.className = "item-button";
-        this.elem.innerText = `${item.emoji} ${item.name}`;
-        this.item = item;
-    }
-}
-
-/**
- * The item button that is in the sidebar
- */
-class SidebarItemButton extends BaseItemButton {
-    sidebar: HTMLElement;
-    sidebarContainer: HTMLElement;
-
-    timerId: ReturnType<typeof setTimeout> | undefined;
-
-    constructor(item: Item, sidebar: HTMLElement, sidebarContainer: HTMLElement) {
-        super(item);
-        this.sidebar = sidebar;
-        this.sidebarContainer = sidebarContainer;
-
-        this.elem.addEventListener("pointerdown", () => {
-            this.timerId = setTimeout(() => {
-                this.handleStartDrag();
-                this.timerId = undefined;
-            }, 100);
-        });
-        this.elem.addEventListener("pointerup", () => {
-            clearTimeout(this.timerId);
-            this.timerId = undefined;
-        });
-    }
-
-    handleStartDrag() {
-        const newButton = new DraggableItemButton(this.item, this.sidebar, true);
-        newButton.addToBody();
-    }
-
-    addToSidebar() {
-        this.sidebarContainer.appendChild(this.elem);
-    }
-}
-
-/**
- * The item button that is draggable
- */
-class DraggableItemButton extends BaseItemButton {
-    dragging: boolean;
-    offset: Vector2 = Vector2.empty();
-
-    constructor(item: Item, sidebar: HTMLElement, dragging: boolean = false) {
-        super(item);
-        this.dragging = dragging;
-
-        this.elem.classList.add("scale-0");
-        this.elem.style.position = "fixed";
-        if (this.dragging) {
-            this.setPos(getPointerPosition());
-        }
-
-        this.elem.addEventListener("pointerdown", () => {
-            this.dragging = true;
-        });
-        document.addEventListener("pointermove", ev => {
-            if (!this.dragging) {
-                return;
-            }
-
-            this.elem.style.position = "fixed";
-            this.elem.style.zIndex = "30";
-            this.setPos(new Vector2(ev.x, ev.y));
-        });
-        document.addEventListener("pointerup", () => {
-            if (!this.dragging) {
-                return;
-            }
-            this.dragging = false;
-            this.elem.style.zIndex = "10";
-
-            if (checkCollision(this.elem, sidebar)) {
-                this.removeFromBody();
-            }
-        });
-    }
-
-    setPos(newPos: Vector2 | null) {
-        if (newPos === null) {
-            this.elem.style.left = "";
-            this.elem.style.top = "";
-            return;
-        }
-
-        const pos = newPos.diffed(this.offset);
-        this.elem.style.left = `${pos.x}px`;
-        this.elem.style.top = `${pos.y}px`;
-    }
-
-    addToBody() {
-        document.body.appendChild(this.elem);
-        this.offset = getElementDimensions(this.elem).divided(2);
-        this.elem.classList.remove("scale-0");
-        this.elem.classList.add("scale-100");
-        placedButtons.push(this);
-    }
-
-    removeFromBody() {
-        this.elem.classList.remove("scale-100");
-        this.elem.classList.add("scale-0");
-        for (let i = 0; i < placedButtons.length; i++) {
-            if (placedButtons[i] === this) {
-                placedButtons.splice(i, 1);
-                break;
-            }
-        }
-
-        const TRANSITION_DURATION_MS = 400;
-        setTimeout(() => {
-            document.body.removeChild(this.elem);
-        }, TRANSITION_DURATION_MS);
-    }
-}
 
 // Globals
-const placedButtons = [] as DraggableItemButton[];
-const sidebar = querrySelectorOrThrow<HTMLElement>("#sidebar");
-const sidebarContainer =
-    querrySelectorOrThrow<HTMLElement>("#sidebar-container");
-
 export async function startGame() {
     await initDB()
     const items = await getAllItems();
     for (const item of items) {
-        const button = new SidebarItemButton(item, sidebar, sidebarContainer);
+        const button = new SidebarItemButton(item);
         button.addToSidebar();
     }
 
