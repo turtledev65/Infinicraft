@@ -124,7 +124,9 @@ export function addItem(item: Item) {
             rej(e.target?.error);
         }
         request.onsuccess = (e) => {
-            rez(e.target?.result);
+            const id = e.target?.result as number;
+            store.put({ ...item, id }, id);
+            rez(id);
         }
     })
 }
