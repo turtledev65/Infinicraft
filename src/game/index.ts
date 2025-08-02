@@ -7,7 +7,7 @@ import {
     querrySelectorOrThrow,
 } from "../utils/html";
 import { DEFAULT_MODEL, query } from "../utils/hugging-face";
-import { addItem, getAllItems, initDB } from "../utils/indexeddb";
+import { getAllItems, initDB } from "../utils/indexeddb";
 import { Vector2 } from "../utils/math";
 
 function getExistingCombination(item1: Item, item2: Item) {
@@ -227,20 +227,14 @@ class DraggableItemButton extends BaseItemButton {
 }
 
 // Globals
-const STARTING_ITEMS: Item[] = [
-    { emoji: "💀", name: "skull" },
-    { emoji: "💧", name: "water" },
-] as const;
-const items = [...STARTING_ITEMS];
-
 const placedButtons = [] as DraggableItemButton[];
-
 const sidebar = querrySelectorOrThrow<HTMLElement>("#sidebar");
 const sidebarContainer =
     querrySelectorOrThrow<HTMLElement>("#sidebar-container");
 
 export async function startGame() {
     await initDB()
+    const items = await getAllItems();
 
     for (const item of items) {
         const button = new SidebarItemButton(item, sidebar, sidebarContainer);
