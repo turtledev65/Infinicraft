@@ -1,3 +1,4 @@
+import config from "../config";
 import type { Item } from "../types";
 
 let db: IDBDatabase | null = null;
@@ -22,7 +23,11 @@ export function initDB() {
 
         request.onupgradeneeded = () => {
             const db = request.result;
-            db.createObjectStore("items", { autoIncrement: true });
+            const itemsStore = db.createObjectStore("items", { autoIncrement: true });
+
+            config.startingItems.forEach(item => {
+                itemsStore.add(item);
+            });
         }
     })
 
@@ -30,13 +35,21 @@ export function initDB() {
 
 
 export function getAllItems() {
-    const store = getObjectStore("items", "readonly");
-    if (store === null) {
-        console.error("Store not found");
-        return [];
-    }
+    return new Promise<Item[]>((rez, rej) => {
+        const store = getObjectStore("items", "readonly");
+        if (store === null) {
+            rej("Store not found");
+            return;
+        }
 
-    return store.getAll();
+        const req = store.getAll();
+        req.onerror = (e) => {
+            rej(e.target?.error);
+        }
+        req.onsuccess = () => {
+            rez(req.result);
+        }
+    })
 }
 
 export function addItem(item: Item) {
@@ -51,12 +64,12 @@ export function addItem(item: Item) {
             return;
         }
 
-        const request = store.add(item, item.name);
+        const request = store.add(item);
         request.onerror = (e) => {
             rej(e.target?.error);
         }
-        request.onsuccess = () => {
-            rez();
+        request.onsuccess = (e) => {
+            rez(e.target?.result);
         }
     })
 }
