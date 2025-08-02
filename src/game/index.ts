@@ -200,6 +200,7 @@ class DraggableItemButton extends BaseItemButton {
             }
 
             this.elem.style.position = "fixed";
+            this.elem.style.zIndex = "30";
             this.setPos(new Vector2(ev.x, ev.y));
         });
         document.addEventListener("pointerup", () => {
@@ -207,6 +208,7 @@ class DraggableItemButton extends BaseItemButton {
                 return;
             }
             this.dragging = false;
+            this.elem.style.zIndex = "10";
 
             if (checkCollision(this.elem, sidebar)) {
                 this.removeFromBody();
