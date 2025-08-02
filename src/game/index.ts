@@ -68,31 +68,31 @@ async function getNewCombination(item1: Item, item2: Item) {
     return { ...newItem, id };
 }
 
-async function getCombination(item1: Item, item2: Item) {
-    let out = await getExistingCombination(item1, item2);
-    if (!out) {
-        out = await getNewCombination(item1, item2);
-    }
-    return out;
-}
-
 async function checkPlacedButtons() {
     for (const button of placedButtons) {
         for (const other of placedButtons) {
             if (other === button) continue;
             if (checkCollision(button.elem, other.elem)) {
                 if (!button.dragging && !other.dragging) {
-                    const newItem = await getCombination(button.item, other.item);
+                    let newItem = await getExistingCombination(button.item, other.item);
+                    let alreadyExists = true;
+                    if (!newItem) {
+                        newItem = await getNewCombination(button.item, other.item);
+                        alreadyExists = false;
+                    }
                     if (!newItem) {
                         continue;
                     }
 
-                    const newSidebarButton = new SidebarItemButton(
-                        newItem,
-                        sidebar,
-                        sidebarContainer,
-                    );
-                    newSidebarButton.addToSidebar();
+
+                    if (!alreadyExists) {
+                        const newSidebarButton = new SidebarItemButton(
+                            newItem,
+                            sidebar,
+                            sidebarContainer,
+                        );
+                        newSidebarButton.addToSidebar();
+                    }
 
                     const newDraggableButton = new DraggableItemButton(
                         newItem,
