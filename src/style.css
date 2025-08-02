@@ -63,3 +63,7 @@ canvas {
 .scale-100 {
   transform: scale(100%);
 }
+
+.highlight {
+  border-color: #fde047;
+}
