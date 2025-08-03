@@ -5,7 +5,8 @@ import {
     getElementPosition,
 } from "../utils/html";
 import { DEFAULT_MODEL, query } from "../utils/hugging-face";
-import { addItem, getAllItems, getItem, initDB } from "../utils/indexeddb";
+import { addItem, getAllItems, getAllPlacedItems, getItem, initDB } from "../utils/indexeddb";
+import { Vector2 } from "../utils/math";
 import { isCharAlphanumeric, isCharSign, isCharWhitespace } from "../utils/str";
 import { DraggableItemButton, placedButtons, SidebarItemButton } from "./sidebar";
 
@@ -130,10 +131,17 @@ async function checkPlacedButtons() {
 // Globals
 export async function startGame() {
     await initDB()
-    const items = await getAllItems();
-    for (const item of items) {
+
+    const sidebarItems = await getAllItems();
+    for (const item of sidebarItems) {
         const button = new SidebarItemButton(item);
         button.addToSidebar();
+    }
+    const placedItems = await getAllPlacedItems();
+    for (const i of placedItems) {
+        const button = new DraggableItemButton(i.item, false, i.id);
+        button.addToBody();
+        button.setPos(new Vector2(i.x, i.y));
     }
 
     requestAnimationFrame(checkPlacedButtons);

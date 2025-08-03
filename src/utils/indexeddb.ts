@@ -7,7 +7,7 @@ const name = "Infinicraft";
 const version = 3;
 
 export function initDB() {
-    return new Promise<undefined>((rez, rej) => {
+    return new Promise<void>((rez, rej) => {
         const request = window.indexedDB.open(name, version);
 
         request.onerror = () => {
@@ -18,7 +18,7 @@ export function initDB() {
         request.onsuccess = () => {
             db = request.result;
             console.log("Database initialized");
-            rez(undefined);
+            rez();
         }
 
         request.onupgradeneeded = () => {
@@ -127,6 +127,53 @@ export function addItem(item: Item) {
             const id = e.target?.result as number;
             store.put({ ...item, id }, id);
             rez(id);
+        }
+    })
+}
+
+export function addPlacedItem(item: PlacedItem) {
+    return new Promise<number>((rez, rej) => {
+        if (db === null) {
+            rej("DB not initialized");
+        }
+
+        const store = getObjectStore("placedItems", "readwrite");
+        if (store === null) {
+            rej("Store not found");
+            return;
+        }
+
+        const request = store.add(item);
+        request.onerror = (e) => {
+            rej(e.target?.error);
+        }
+        request.onsuccess = (e) => {
+            const id = e.target?.result as number;
+            store.put({ ...item, id }, id);
+            rez(id);
+        }
+    });
+}
+
+export function removePlacedItem(id: number) {
+    return new Promise<PlacedItem>((rez, rej) => {
+        if (db === null) {
+            rej("DB not initialized");
+        }
+
+        const store = getObjectStore("placedItems", "readwrite");
+        if (store === null) {
+            rej("Store not found");
+            return;
+        }
+
+        const request = store.delete(id);
+        request.onerror = (e) => {
+            rej(e.target?.error);
+        }
+        request.onsuccess = (e) => {
+            const out = e.target?.result;
+            rez(out);
         }
     })
 }

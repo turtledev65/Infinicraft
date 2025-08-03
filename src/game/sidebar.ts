@@ -1,5 +1,6 @@
-import type { Item } from "../types";
-import { checkCollision, getElementDimensions, getPointerPosition, querrySelectorOrThrow } from "../utils/html";
+import type { Item, PlacedItem } from "../types";
+import { checkCollision, getElementDimensions, getElementPosition, getPointerPosition, querrySelectorOrThrow } from "../utils/html";
+import { addPlacedItem, removePlacedItem } from "../utils/indexeddb";
 import { Vector2 } from "../utils/math";
 
 // Globals
@@ -61,10 +62,12 @@ export class SidebarItemButton extends BaseItemButton {
 export class DraggableItemButton extends BaseItemButton {
     dragging: boolean;
     offset: Vector2 = Vector2.empty();
+    id: number | null = null;
 
-    constructor(item: Item, dragging: boolean = false) {
+    constructor(item: Item, dragging: boolean = false, id: number | null = null) {
         super(item);
         this.dragging = dragging;
+        this.id = id;
 
         this.elem.classList.add("scale-0");
         this.elem.style.position = "fixed";
@@ -93,7 +96,11 @@ export class DraggableItemButton extends BaseItemButton {
 
             if (checkCollision(this.elem, sidebar)) {
                 this.removeFromBody();
+                return;
             }
+
+
+            this.addToDB();
         });
     }
 
@@ -131,5 +138,34 @@ export class DraggableItemButton extends BaseItemButton {
         setTimeout(() => {
             document.body.removeChild(this.elem);
         }, TRANSITION_DURATION_MS);
+
+        this.removeFromDB();
+    }
+
+    async addToDB() {
+        if (this.id !== null) {
+            return;
+        }
+
+        const pos = getElementPosition(this.elem);
+        try {
+            const id = await addPlacedItem({ x: pos.x, y: pos.y, item: this.item } as PlacedItem);
+            this.id = id;
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    async removeFromDB() {
+        if (this.id === null) {
+            return;
+        }
+
+        try {
+            await removePlacedItem(this.id);
+            this.id = null
+        } catch (err) {
+            console.log(err);
+        }
     }
 }
