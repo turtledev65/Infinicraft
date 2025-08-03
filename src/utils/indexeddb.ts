@@ -44,8 +44,8 @@ export function getAllItems() {
         }
 
         const req = store.getAll();
-        req.onerror = (e) => {
-            rej(e.target?.error);
+        req.onerror = () => {
+            rej(req.error);
         }
         req.onsuccess = () => {
             rez(req.result);
@@ -65,9 +65,9 @@ export function getItem(recipe: [number, number]) {
             return;
         }
 
-        const request = store.index("recipe").openCursor();
-        request.onsuccess = (e) => {
-            const cursor = request.result;
+        const req = store.index("recipe").openCursor();
+        req.onsuccess = () => {
+            const cursor = req.result;
             if (cursor) {
                 const currItem = cursor.value;
                 if (currItem.recipe[0] === recipe[0] && currItem.recipe[1] === recipe[1]) {
@@ -79,8 +79,8 @@ export function getItem(recipe: [number, number]) {
                 return;
             }
         }
-        request.onerror = (e) => {
-            rej(e.target?.error);
+        req.onerror = () => {
+            rej(req.error);
         }
     })
 }
@@ -98,8 +98,8 @@ export function getAllPlacedItems() {
         }
 
         const req = store.getAll();
-        req.onerror = (e) => {
-            rej(e.target?.error);
+        req.onerror = () => {
+            rej(req.error);
         }
         req.onsuccess = () => {
             rez(req.result);
@@ -119,12 +119,12 @@ export function addItem(item: Item) {
             return;
         }
 
-        const request = store.add(item);
-        request.onerror = (e) => {
-            rej(e.target?.error);
+        const req = store.add(item);
+        req.onerror = () => {
+            rej(req.error);
         }
-        request.onsuccess = (e) => {
-            const id = e.target?.result as number;
+        req.onsuccess = () => {
+            const id = req.result as number;
             store.put({ ...item, id }, id);
             rez(id);
         }
@@ -143,12 +143,12 @@ export function addPlacedItem(item: PlacedItem) {
             return;
         }
 
-        const request = store.add(item);
-        request.onerror = (e) => {
-            rej(e.target?.error);
+        const req = store.add(item);
+        req.onerror = () => {
+            rej(req.error);
         }
-        request.onsuccess = (e) => {
-            const id = e.target?.result as number;
+        req.onsuccess = () => {
+            const id = req.result as number;
             store.put({ ...item, id }, id);
             rez(id);
         }
@@ -156,7 +156,7 @@ export function addPlacedItem(item: PlacedItem) {
 }
 
 export function removePlacedItem(id: number) {
-    return new Promise<PlacedItem>((rez, rej) => {
+    return new Promise<void>((rez, rej) => {
         if (db === null) {
             rej("DB not initialized");
         }
@@ -167,19 +167,18 @@ export function removePlacedItem(id: number) {
             return;
         }
 
-        const request = store.delete(id);
-        request.onerror = (e) => {
-            rej(e.target?.error);
+        const req = store.delete(id);
+        req.onerror = () => {
+            rej(req.error);
         }
-        request.onsuccess = (e) => {
-            const out = e.target?.result;
-            rez(out);
+        req.onsuccess = () => {
+            rez();
         }
     })
 }
 
 export function updatePlacedItem(newItem: PlacedItem, id: number) {
-    return new Promise<PlacedItem>((rez, rej) => {
+    return new Promise<void>((rez, rej) => {
         if (db === null) {
             rej("DB not initialized");
         }
@@ -190,13 +189,12 @@ export function updatePlacedItem(newItem: PlacedItem, id: number) {
             return;
         }
 
-        const request = store.put(newItem, id);
-        request.onerror = (e) => {
-            rej(e.target?.error);
+        const req = store.put(newItem, id);
+        req.onerror = () => {
+            rej(req.error);
         }
-        request.onsuccess = (e) => {
-            const out = e.target?.result;
-            rez(out);
+        req.onsuccess = () => {
+            rez();
         }
     })
 }
