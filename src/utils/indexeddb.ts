@@ -178,6 +178,29 @@ export function removePlacedItem(id: number) {
     })
 }
 
+export function updatePlacedItem(newItem: PlacedItem, id: number) {
+    return new Promise<PlacedItem>((rez, rej) => {
+        if (db === null) {
+            rej("DB not initialized");
+        }
+
+        const store = getObjectStore("placedItems", "readwrite");
+        if (store === null) {
+            rej("Store not found");
+            return;
+        }
+
+        const request = store.put(newItem, id);
+        request.onerror = (e) => {
+            rej(e.target?.error);
+        }
+        request.onsuccess = (e) => {
+            const out = e.target?.result;
+            rez(out);
+        }
+    })
+}
+
 function getObjectStore(name: "items" | "placedItems", mode: "readonly" | "readwrite") {
     if (db === null) {
         console.error("DB not initialized");

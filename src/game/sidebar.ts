@@ -1,6 +1,6 @@
 import type { Item, PlacedItem } from "../types";
 import { checkCollision, getElementDimensions, getElementPosition, getPointerPosition, querrySelectorOrThrow } from "../utils/html";
-import { addPlacedItem, removePlacedItem } from "../utils/indexeddb";
+import { addPlacedItem, removePlacedItem, updatePlacedItem } from "../utils/indexeddb";
 import { Vector2 } from "../utils/math";
 
 // Globals
@@ -72,7 +72,7 @@ export class DraggableItemButton extends BaseItemButton {
         this.elem.classList.add("scale-0");
         this.elem.style.position = "fixed";
         if (this.dragging) {
-            this.setPos(getPointerPosition());
+            this.setPos(getPointerPosition(), true);
         }
 
         this.elem.addEventListener("pointerdown", () => {
@@ -85,7 +85,7 @@ export class DraggableItemButton extends BaseItemButton {
 
             this.elem.style.position = "fixed";
             this.elem.style.zIndex = "30";
-            this.setPos(new Vector2(ev.x, ev.y));
+            this.setPos(new Vector2(ev.x, ev.y), true);
         });
         document.addEventListener("pointerup", () => {
             if (!this.dragging) {
@@ -104,7 +104,7 @@ export class DraggableItemButton extends BaseItemButton {
         });
     }
 
-    setPos(newPos: Vector2 | null) {
+    setPos(newPos: Vector2 | null, updateDB: boolean = false) {
         if (newPos === null) {
             this.elem.style.left = "";
             this.elem.style.top = "";
@@ -114,6 +114,12 @@ export class DraggableItemButton extends BaseItemButton {
         const pos = newPos.diffed(this.offset);
         this.elem.style.left = `${pos.x}px`;
         this.elem.style.top = `${pos.y}px`;
+
+
+        if (updateDB) {
+            this.updateInDB();
+        }
+
     }
 
     addToBody() {
@@ -164,6 +170,19 @@ export class DraggableItemButton extends BaseItemButton {
         try {
             await removePlacedItem(this.id);
             this.id = null
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    async updateInDB() {
+        if (this.id === null) {
+            return;
+        }
+
+        try {
+            const pos = getElementPosition(this.elem);
+            await updatePlacedItem({ x: pos.x, y: pos.y, id: this.id, item: this.item }, this.id);
         } catch (err) {
             console.log(err);
         }
