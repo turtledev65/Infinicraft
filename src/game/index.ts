@@ -1,3 +1,4 @@
+import config from "../config";
 import type { Item } from "../types";
 import {
     checkCollision,
@@ -52,9 +53,8 @@ async function getNewCombination(item1: Item, item2: Item) {
     console.log(
         `Generating new combination between ${item1.emoji} ${item1.name} and ${item2.emoji} ${item2.name}...`,
     );
-    const prompt = `I will give you 2 words and I want you to give me the most plausible outcome of combining these 2 things, even if it's impossible. I want you to only repsond with one word, which is the answer I'm seeking and a string of highly prefferably one emoji which represents the generated word. The emoji/s should be the first things and then a space, followed by the word I'm seeking. NOTHING MORE. The emoji cannot be something that represents one of the original word, it needs to represent the word that is the combination of those 2. I will also give you the emojis that the original words use, but YOU CANNOT USE THEM AT ALL. ALSO DO NOT GIVE ME JUST AN EMOJI, I ALSO WANT TEXT. The 2 words are "${item1.emoji} ${item1.name}" and "${item2.emoji} ${item2.name}"`;
     const response = await query({
-        messages: [{ role: "user", content: prompt }],
+        messages: [{ role: "user", content: config.prompt(item1, item2) }],
         model: DEFAULT_MODEL,
     });
     if (response === undefined || response.choices.length === 0) {

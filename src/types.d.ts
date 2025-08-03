@@ -13,7 +13,7 @@ export type PlacedItem = {
     id: number;
 }
 
-
 export type Config = {
     startingItems: Item[];
+    prompt: (item1: Item, item2: Item) =>  string;
 };
