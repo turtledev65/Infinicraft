@@ -5,7 +5,24 @@ import {
 } from "../utils/html";
 import { DEFAULT_MODEL, query } from "../utils/hugging-face";
 import { addItem, getAllItems, getItem, initDB } from "../utils/indexeddb";
+import { isCharAlphanumeric, isCharSign, isCharWhitespace } from "../utils/str";
 import { DraggableItemButton, placedButtons, SidebarItemButton } from "./sidebar";
+
+function parseItem(str: string) {
+    const out = { emoji: "", name: "" } as Item;
+
+    for (const ch of str) {
+        if (isCharWhitespace(ch) || isCharSign(ch)) continue;
+
+        if (isCharAlphanumeric(ch)) {
+            out.name += ch.toLowerCase();;
+        } else {
+            out.emoji += ch;
+        }
+    }
+
+    return out;
+}
 
 async function getExistingCombination(item1: Item, item2: Item) {
     console.log(
@@ -45,7 +62,8 @@ async function getNewCombination(item1: Item, item2: Item) {
         return null;
     }
 
-    const [emoji, name] = response.choices[0].message.content.split(" ");
+    console.log("Api response: ", response.choices[0].message.content);
+    const { emoji, name } = parseItem(response.choices[0].message.content);
     console.log(`Found ${emoji} ${name}`);
 
     // The saved ids should always be saved in ascending order
@@ -57,7 +75,6 @@ async function getNewCombination(item1: Item, item2: Item) {
         id2 = tmp;
     }
     const recipe = [id1, id2];
-    console.log(recipe);
 
     // Save to db
     const newItem = { emoji, name, recipe } as Item;
