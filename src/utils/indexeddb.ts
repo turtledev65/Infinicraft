@@ -3,12 +3,9 @@ import type { Item, PlacedItem } from "../types";
 
 let db: IDBDatabase | null = null;
 
-const name = "Infinicraft";
-const version = 3;
-
 export function initDB() {
     return new Promise<void>((rez, rej) => {
-        const request = window.indexedDB.open(name, version);
+        const request = window.indexedDB.open(config.dbName, config.dbVersion);
 
         request.onerror = () => {
             console.error("Failed to open database");
