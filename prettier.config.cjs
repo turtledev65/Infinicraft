@@ -3,8 +3,7 @@
 /** @type {import("prettier").Config} */
 const config = {
   arrowParens: "avoid",
-  tabWidth: 2,
-  plugins: ["prettier-plugin-tailwindcss"],
+    tabWidth: 2,
 };
 
 module.exports = config;
